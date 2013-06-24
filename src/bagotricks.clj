@@ -352,12 +352,17 @@
 (defmacro <-
   "Converts a ->> to a ->
 
-   (->> (range 10) (map inc) (<- (doto prn)) (reduce +))
+   (->> (range 10) (map inc) (<- doto prn) (reduce +))
 
    Jason W01fe is happy to give a talk anywhere any time on
-   the calculus of arrow macros"
-  [& body]
-  `(-> ~(last body) ~@(butlast body)))
+   the calculus of arrow macros.
+
+   Note: syntax modified from original."
+  ;; [& body] ;; original version
+  ;; `(-> ~(last body) ~@(butlast body)) ;; original version
+  ([x] `(~x))
+  ([cmd & body]
+      `(~cmd ~(last body) ~@(butlast body))))
 
 
 
