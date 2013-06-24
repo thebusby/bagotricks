@@ -60,7 +60,7 @@ With Maven:
     <dependency>
       <groupId>bagotricks</groupId>
       <artifactId>bagotricks</artifactId>
-      <version>1.0.3</version>
+      <version>1.5.1</version>
     </dependency>
 
 
