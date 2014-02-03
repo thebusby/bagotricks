@@ -1,5 +1,5 @@
 Available via [clojars](http://clojars.org/search?q=bagotricks)   
-Current stable version: [bagotricks "1.5.2"]
+Current stable version: [bagotricks "1.5.3"]
 
 
 # Bagotricks
@@ -52,7 +52,7 @@ If you are using Maven, add the following repository definition to your `pom.xml
 
 With Leiningen:
 
-    [bagotricks "1.5.2"]
+    [bagotricks "1.5.3"]
 
 
 With Maven:
@@ -60,7 +60,7 @@ With Maven:
     <dependency>
       <groupId>bagotricks</groupId>
       <artifactId>bagotricks</artifactId>
-      <version>1.5.2</version>
+      <version>1.5.3</version>
     </dependency>
 
 
