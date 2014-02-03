@@ -320,7 +320,62 @@
          false
          (> (/ good all) percent)))))
 
+(defn filter-in [filter-spec record]
+  "Filter a map, or vector of maps, by a filter-spec.
+   If :filter-in/complement? is true, then the complement is returned.
 
+   Ex.
+      (def foo {:a 1 :b {:c 2 :d 3}})
+
+      (filter-in {:a true :b {:d true}} foo)
+      ->
+      {:a 1, :b {:d 3}}
+
+      (filter-in #{:b :filter-in/complement?} foo)
+      ->
+      {:a 1}"
+  (let [ ;; Define's keyword for filter-in negation option
+        option-key    :filter-in/complement?
+        default       (filter-spec option-key)
+
+        ;; Don't assoc nil values
+        assoc-no-nil! (fn [m k v] (if v
+                                    (assoc! m k v)
+                                    m))
+
+        ;; fn which XOR's against filter-spec param
+        xor (if default
+              not
+              identity)
+
+        ;; assoc! based on results of filter-spec and negation option
+        filter-fn (fn [switch m k v]
+                    (if (xor switch)
+                      (assoc-no-nil! m k v)
+                      m))
+
+        ;; Subspec's inheret negation options from parents
+        default-subspec (fn [subspec]
+                          (if (map? subspec)
+                            (merge {option-key default} subspec)
+                            (if default
+                              (conj subspec option-key)
+                              subspec)))
+
+        ;; Apply filter-spec to individual record
+        work-fn     (fn->> (reduce (fn [agg [k v]]
+                                     (let [ans (filter-spec k)]
+                                       (if (coll? ans)
+                                         (assoc-no-nil! agg k (filter-in (default-subspec ans) v))
+                                         (filter-fn ans agg k v))))
+                                   (transient {}))
+                           persistent!
+                           (#(when-not (empty? %) %)))]
+    (if (vector? record)
+      (->> record
+           (keep work-fn)
+           vec)
+      (work-fn record))))
 
 ;; Misc
 ;;
@@ -331,6 +386,64 @@
   `(if (<= (* (rand) 100) ~chance)
      ~lucky
      ~@unlucky))
+
+(defmacro cond-percent*
+  [random-percent & clauses]
+  (let [cond-details (->> clauses
+                          (partition 2 2 nil)
+                          (sort-by first >)
+                          (reduce (fn [[agg total] [percent clause]]
+                                    (if (not (and percent clause))
+                                      (throw (IllegalArgumentException. "cond-percent requires an even number of forms"))
+                                      (let [nval (+ percent total)]
+                                        [(conj agg
+                                               (list clojure.core/<
+                                                     random-percent
+                                                     nval)
+                                               clause)
+                                         nval])))
+                                  [['clojure.core/cond] 0]))]
+    (if (== (second cond-details) 100)
+      (-> cond-details
+          first
+          seq)
+      (throw (IllegalArgumentException.
+              "cond-percent requires percent clauses sum to 100%")))))
+
+
+(defmacro cond-percent
+  "Similar to clojure.core/cond, but for each condition takes the percentage chance
+   the form should be executed and returned.
+
+   Ex. (cond-percent
+         50 \"50% Chance\"
+         40 \"40% Chance\"
+         10 (str 10 \"% Chance\")
+
+   NOTE: all conditions must sum to 100%"
+  [& clauses]
+  `(let [random-percent# (* (clojure.core/rand) 100)]
+     (cond-percent* random-percent# ~@clauses)))
+
+(defn get-random-elem
+  "Provided a element distribution, choose an element randomly along the distribution"
+  [distribution]
+  (let [random-percent (* (clojure.core/rand)
+                          100)
+        cdf (->> distribution
+                 (sort-by second >)
+                 (reduce (fn [[agg total] [elem dist]]
+                           (let [nval (+ total dist)]
+                             [(conj agg [elem nval]) nval]))
+                         [[] 0])
+                 first)]
+    (if (== (-> cdf last second) 100)
+      (->> cdf
+           (drop-while #(< (second %) random-percent))
+           first
+           first)
+      (throw (IllegalArgumentException.
+              "element distribution requires percent clauses sum to 100")))))
 
 
 
@@ -363,7 +476,6 @@
   ([x] `(~x))
   ([cmd & body]
       `(~cmd ~(last body) ~@(butlast body))))
-
 
 
 (set! *warn-on-reflection* false)
