@@ -1,4 +1,4 @@
-(defproject bagotricks "1.5.3"
+(defproject bagotricks "1.5.4"
   :description  "A little bag of tricks for use with Clojure"
   :url          "http://github.com/thebusby/bagotricks"
   :license      {:name "MIT"

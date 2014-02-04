@@ -6,6 +6,39 @@
 (set! *warn-on-reflection* true)
 
 
+
+;; The following is from Prismatic's Plumbing library and maintains it's original license
+;; Details: https://github.com/Prismatic/plumbing
+;; Source:  https://github.com/Prismatic/plumbing/blob/master/src/plumbing/core.clj
+;;
+
+(defmacro fn->
+  "Equivalent to `(fn [x] (-> x ~@body))"
+  [& body]
+  `(fn [x#] (-> x# ~@body)))
+
+(defmacro fn->>
+  "Equivalent to `(fn [x] (->> x ~@body))"
+  [& body]
+  `(fn [x#] (->> x# ~@body)))
+
+(defmacro <-
+  "Converts a ->> to a ->
+
+   (->> (range 10) (map inc) (<- doto prn) (reduce +))
+
+   Jason W01fe is happy to give a talk anywhere any time on
+   the calculus of arrow macros.
+
+   Note: syntax modified from original."
+  ;; [& body] ;; original version
+  ;; `(-> ~(last body) ~@(butlast body)) ;; original version
+  ([x] `(~x))
+  ([cmd & body]
+      `(~cmd ~(last body) ~@(butlast body))))
+
+
+
 ;; Handle types
 ;; 
 
@@ -260,7 +293,7 @@
     (if-let [results (seq (.toArray result))]
       (->> results
            (sort-by first)
-           (map (fn [[a b]] b))))))
+           (map second)))))
 
 
 
@@ -445,37 +478,6 @@
       (throw (IllegalArgumentException.
               "element distribution requires percent clauses sum to 100")))))
 
-
-
-;; The following is from Prismatic's Plumbing library and maintain's it's original license
-;; Details: https://github.com/Prismatic/plumbing
-;; Source:  https://github.com/Prismatic/plumbing/blob/master/src/plumbing/core.clj
-;;
-
-(defmacro fn->
-  "Equivalent to `(fn [x] (-> x ~@body))"
-  [& body]
-  `(fn [x#] (-> x# ~@body)))
-
-(defmacro fn->>
-  "Equivalent to `(fn [x] (->> x ~@body))"
-  [& body]
-  `(fn [x#] (->> x# ~@body)))
-
-(defmacro <-
-  "Converts a ->> to a ->
-
-   (->> (range 10) (map inc) (<- doto prn) (reduce +))
-
-   Jason W01fe is happy to give a talk anywhere any time on
-   the calculus of arrow macros.
-
-   Note: syntax modified from original."
-  ;; [& body] ;; original version
-  ;; `(-> ~(last body) ~@(butlast body)) ;; original version
-  ([x] `(~x))
-  ([cmd & body]
-      `(~cmd ~(last body) ~@(butlast body))))
 
 
 (set! *warn-on-reflection* false)
