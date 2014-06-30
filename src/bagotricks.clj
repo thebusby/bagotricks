@@ -38,6 +38,32 @@
       `(~cmd ~(last body) ~@(butlast body))))
 
 
+;; Fix if-let
+;;
+
+(defmacro ^{:private true} if-lets*
+  [bindings then else]
+  (let [form (subvec bindings 0 2)
+        more (subvec bindings 2)]
+    (if (empty? more)
+      `(if-let ~form
+         ~then
+         ~else)
+      `(if-let ~form
+         (if-lets* ~more ~then ~else)
+         ~else))))
+
+(defmacro if-lets
+  "Like if-let, but accepts multiple bindings and evaluates them sequentally.
+   binding evaluation halts on first falsey value, and 'else' clause activates."
+  ([bindings then]
+     `(if-lets ~bindings ~then nil))
+  ([bindings then else]
+     (cond
+      (not (even? (count bindings))) (throw (IllegalArgumentException. "if-lets requires an even number of bindings"))
+      (not (vector? bindings))       (throw (IllegalArgumentException. "if-lets requires a vector for its binding"))
+      :else `(if-lets* ~bindings ~then ~else))))
+
 
 ;; Handle types
 ;; 
@@ -100,6 +126,7 @@
   (-> s
       .toLowerCase
       (.replace \_ \-)
+      (.replace \  \-)
       keyword))
 
 
